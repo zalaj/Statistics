@@ -1,0 +1,377 @@
+\documentclass{article}
+\usepackage[slovene]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{mathtools}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{{\bf 1. doma"ca naloga} \\[3mm]
+       Statistika 2 in Matemati"cna statistika}
+
+\author{Zala Jam"sek, 27122040}
+\SweaveOpts{concordance=TRUE}
+\maketitle
+\newpage
+
+%############
+%1.naloga
+%###########
+
+\section*{1. naloga}
+
+Za analizo v nalogi sem si izbrala podatke iz datoteke 2010.dohodek.eur. Odvisna spremenljivka v teh podatkih je minimalni dohodek v EUR/mesec, odvisna spremenljivka pa je BDP na prebivalca v EUR. 
+%neodvisna spremenljivka pa %je BDP na prebivalca kot indeks (EUR28=100). To pomeni, da je BDP na prebivalca izra"zen kot dele"z %povpre"cja Evropskih dr"zav (EU28), ker je povpre"cje nastavljeno na $100$. "ce je indeks dr"zave %ve"cji od $100$, potem je BDP na prebivalca vi"sji od evropskega povpre"cja in obratno. Ineks je %torej namenjen predvsem meddr"zavni primerjavi. ($http://epp.eurostat.ec.europa.eu/portal/page%/portal/product\_details/dataset?p\_product\_code=TEC00114$).
+
+<<>>=
+#prebrani podatki iz .txt datoteke
+setwd('/Users/zala/Documents/Statistics_2/')
+data_BDP <- read.table('2010.dohodek.eur.txt', header=TRUE, sep = ' ')
+data_BDP[1:4,]
+@
+
+Ker je nekaj nepopolnih podatkov, sem jih odstranila.
+
+<<>>=
+#ostranjeni nepopolni podatki
+data_BDP <- na.omit(data_BDP)
+summary(data_BDP)
+@
+
+1.\\
+Razsevni grafikon ima na osi x neodvisno spremenljivko BDP na prebivalca v EUR in na y osi odvisno spremenljivko dohodek.
+<<fig=TRUE>>=
+#podatki kot vektor
+BDP <- data_BDP$BDP.eur
+dohodek <- data_BDP$dohodek
+#RAZSEVNI DIAGRAM
+plot(x=BDP, y=dohodek)
+@
+
+Na grafikonu vsaka to"cka predstavlja eno dr"zavo. Ena dr"zava mo"cno izstopa predvsem po velikosti BDP na prebivalca in ima poleg tega tudi najve"cji dohodek. Sicer pa je iz grafikona razvidno, da imajo dr"zave z vi"sjim BDP na prebivalca tudi vi"sji dohodek. Bolj natan"cna mera za povezanost med spremenljivkama pa je korelacijski koeficient. Prav tako to"cke le"zijo skoraj na premici.\\
+
+Pearsonov koeficient korelacije meri korelacijo (linearno povezanost) med dvema spremenljivkama in je izra"cunan kot razmerje med kovarianco in standardnima odklonoma:
+$$r_{xy} = \frac{cov(x,y)}{\sigma_x \sigma_y}$$
+$$cov(x,y) = \frac{1}{N} \sum_{i=1}^N (x_i - \mu_i)(y_i - \mu_i)$$
+
+Funkcija za izra"cun koeficienta je "ze vgrajena v R. 
+<<>>=
+#Pearsonov koeficient
+Pearson<- function(d){
+  pearson <-cor(d, method = 'pearson')
+  return(pearson[2,1])
+}
+Pearson(data_BDP)
+@
+
+Pearsonov korelacijski koeficient je $0.8388114$. Kot sem opazila "ze iz same oblike razsevnega grafikona je korelacija med spremenljivkama pozitivna. Pearsonov koeficient je blizu 1, kar pomeni, da je korelacija (povezanost) med spremenljvkama skoraj linearna, kar je videti tudi iz zame oblike grafikona, saj to"cke le"zijo skoraj na premici. \\
+
+2.\\
+Za regresijsko premico "zelim dolo"citi $a$ in $b$, tako da bo
+$$dohodek = a + b BDP$$
+
+Parametra $a$ in $b$ sta dobljena z metodo najmanj"sih kvadratov. V R-u se koeficienta dobi s funkcijo lm. Funkcijo $koef_lr$, ki vrne parametra a in b sem ustvarila, ker jo bom uporabila v nadaljevanju naloge.
+
+<<>>=
+#funkcija, ki vrne koeficiente linearne regresije
+koef_lr <- function(d){
+  lr <- lm(d$dohodek~d$BDP)
+  a <-lr$coefficients[1]
+  b <-lr$coefficients[2]
+  return(c(a,b))
+}
+l_reg <- lm(dohodek~BDP)
+summary(l_reg)
+@
+
+Dobimo rezultata:
+$a = -122,336$, $b=0,0362$, kar pomeni, da "ce se BDP na prebivalca na prebivalca pove"ca za eno 1 EUR, se minimalni dohodek v dr"zavi pove"ca za $0,0362$ EUR. In "ce je BDP na prebivalca enak 0, je minimalni dohodek v dr"zavi negativen in enak $-122,336$. V razsevni grafikon je vrisana regresijska premica.
+
+<<fig=TRUE>>=
+#linearna regresija 
+plot(x=BDP, y=dohodek, xlim = c(0,70000), ylim=c(-500,2000))
+abline(l_reg, col=2)
+@
+
+3.\\
+Za simulacijo v vsakem od 1000 korakov je naklju"cno izberan vzorec velikosti 10 in na tem vzorcu je izra"cunan Pearsonov koeficient korelacije. Koeficienti so predstavljeni v histogramu.
+
+<<fig=TRUE>>=
+#Simulacija za Pearsonov koeficient
+pearson_vector <- numeric(0)
+for (i in 1:1000){
+  data_BDP_pearson <- data_BDP[sample(nrow(data_BDP),10),]
+  pearson_vector[i]<-Pearson(data_BDP_pearson)
+}
+hist(pearson_vector)
+mean(pearson_vector)
+sd(pearson_vector)
+@
+Povpre??je vzor??ne porazdelitve je $0,9017269$, standardni odkolon pa $0.06092566$\\
+
+4.\\
+V vsakem koraku simulacije je naklju??no izberan vzorec velikosti 10 in na tem vzorcu izra??unan regresijski koeficient. Regresijski koeficienti so predstavljeni v histogramu.
+
+<<fig=TRUE>>=
+#Simulacija za regresijski koeficient
+koef_b <- numeric(0)
+for (i in 1:1000){
+  data_BDP_koef <- data_BDP[sample(nrow(data_BDP),10),]
+  koef_b[i] <- koef_lr(data_BDP_koef)[2]  
+}
+hist(koef_b)
+@
+
+Na histogramu je opaziti dvojni vrh. Pri v drugem stolpcu (vrednosti 0,03-0,035) in drugi vrh v devetem okencu (vrednosti 0,065/0,07).
+
+%%%!!!!!!!!!!!!ZAKAJ PRIDE DO TEGA
+
+<<>>=
+perm_data <- data_BDP[sample(nrow(data_BDP),10),]
+perm_data
+#t je funkcija, ki izracuna testno statistiko t
+t <- function(data){
+  r <- Pearson(data)
+  n <- length(data[,1])
+  t <-sqrt(n-2)*(r/sqrt(1-r^2)) 
+  return(t)
+}
+
+t_star <- t(perm_data)
+t(data_BDP)
+p_star <- Pearson(perm_data)
+
+#PERMUTACIJSKI TEST
+#Monte Carlo Simulacija za 
+
+permutation_test <- function(data, B, test){
+  t_vect <- numeric(0)
+  
+  BDP <- data$BDP
+  dohodek <- data$dohodek
+  
+  for (i in 1:B){
+     X<-data.frame(sample(BDP),sample(dohodek))
+     t_vect[i] <- test(X)
+  }
+  hist(t_vect)
+ return(t_vect)  
+}
+
+#permutation_test(perm_data,1000,t)
+#permutation_test(perm_data,1000,Pearson)
+
+#permutation_test(data_BDP,2000,t)>t(data_BDP)
+#sum(permutation_test(data_BDP,1000,Pearson)>=p_star)
+
+#permutation_test(perm_data,1000,t)>t(data_BDP)
+#permutation_test(perm_data,1000,Pearson)>p_star
+@
+
+%#################
+%2.NALOGA
+%################
+
+\section*{2. naloga}
+
+1.\\
+Izra??un parametrov pareto porazdelitve z metodo najve??jega verjetja:
+
+$$f(x_i) = \frac{\alpha \lambda^{\alpha}}{x_i^{\alpha + 1}}$$
+$$L = \prod_{i=1}^n \frac{\alpha \lambda^{\alpha}}{x_i^{\alpha + 1}} = \alpha^n \lambda^{\alpha n} \prod_{i=1}^n x_i^{-(\alpha +1)}$$
+$$ l = log(L) = n log(\alpha) + n \alpha log(\lambda) - (\alpha + 1) \sum_{i=1}^n log(x_i)$$
+$$\frac{\partial u}{\partial \lambda} = \frac{n \alpha}{\lambda} = 0$$
+
+Za parameter $\lambda$  iskanje maksimuma z odvajanjem ni ustrezna metoda. Iz definicije Pareto porazdelitve pa je znano, da je $\lambda \leq x_i$ za vsak $i$. Torej lahko je parameter ocenjen iz tega pogoja:
+$$\lambda \leq x_i \Rightarrow \hat{\lambda} = min(x_i)$$
+
+$$\frac{\partial l}{\partial \alpha} = \frac{n}{\alpha} + n log(\lambda) - \sum_{i=1}^n log(x_i)= 0$$
+$$\frac{n}{\alpha} = \sum_{i=1}^n log(x_i) - log(\lambda)^n$$
+$$\frac{\alpha}{n} = \frac{1}{\sum_{i=1}^n log(\frac{x_i}{\lambda})}$$
+$$\hat{\alpha} = \frac{n}{\sum_{i=1}^n log(\frac{x_i}{\hat{\lambda}})}$$
+
+2.\\
+Za Fisherjevo informacijsko matriko sem najprej izra??unala druge odvode log porazdelitvene funkcije:
+
+$$log(f(x)) = log(\alpha) + \alpha log(\lambda) - (\alpha + 1) log(x)$$
+$$\frac{\partial log(f(x))}{\partial \alpha} = \frac{1}{\alpha} + log(\lambda)-log(x) $$
+$$\frac{\partial log(f(x))}{\partial \lambda} = \frac{\alpha}{\lambda} $$
+$$\frac{\partial ^2 log(f(x))}{\partial \alpha ^2} = -\frac{1}{\alpha ^2} $$
+$$\frac{\partial ^2 log(f(x))}{\partial \lambda^2} = -\frac{\alpha}{\lambda ^2} $$
+$$\frac{\partial ^2 log(f(x))}{\partial \alpha \partial \lambda} = \frac{1}{\lambda} $$
+
+Fisherjevo informacijsko matriko je:
+$$I(\theta) = -E [\frac{\partial ^2}{\partial \theta ^2} log f(x; \theta) | \theta ]$$
+
+$$I(\theta) = \begin{bmatrix}
+       \frac{1}{\alpha ^2} & -\frac{1}{\lambda}          \\[0.3em]
+       -\frac{1}{\lambda} & \frac{\alpha}{\lambda ^2}    \\[0.3em]
+     \end{bmatrix}  $$
+     
+3.\\
+Za metodo momentov uporabimo:
+$$\mu_1 = E(X)$$
+$$\mu_2 = E(X^2)$$
+
+Momenti Pareto porazdelitve so:
+\begin{eqnarray*}
+E(X) &=& \int_\lambda ^\infty x f(x) dx = \int_\lambda ^\infty x \frac{\alpha \lambda ^\alpha}{x^{\alpha + 1}} dx \\
+    &=& \alpha \lambda ^\alpha \int_\lambda ^\infty \frac{1}{x^\alpha} dx \\
+    &=&  \frac{\alpha \lambda ^\alpha}{-(\alpha - 1)} \frac{1}{x^{\alpha-1}} ~\Bigr|_\lambda ^\infty \\
+    &=& \frac{\alpha \lambda ^\alpha}{-(\alpha - 1)}(-\frac{1}{\lambda ^{\alpha-1}})\\
+    &=& \frac{\alpha \lambda}{\alpha -1}\\
+\end{eqnarray*}
+
+\begin{eqnarray*}
+E(X^2) &=& \int_\lambda ^\infty x^2 f(x) dx = \int_\lambda ^\infty x^2 \frac{\alpha \lambda ^\alpha}{x^{\alpha + 1}} dx \\
+    &=& \alpha \lambda ^\alpha \int_\lambda ^\infty \frac{1}{x^{\alpha-1}} dx \\
+    &=&  \frac{\alpha \lambda ^\alpha}{-(\alpha - 2)} \frac{1}{x^{\alpha-2}} ~\Bigr|_\lambda ^\infty \\
+    &=& \frac{\alpha \lambda ^\alpha}{-(\alpha - 2)}(-\frac{1}{\lambda ^{\alpha-2}})\\
+    &=& \frac{\alpha \lambda ^2}{\alpha -2}\\
+\end{eqnarray*}
+
+Potreben pogoj za obstoj momentov je torej, da je $\alpha > 2$.
+V obeh momentih nastopata oba parametra, zato z deljenjem eliminiramo $\lambda$
+\begin{eqnarray*}
+  \frac{\mu_1 ^2}{\mu_2} &=& \frac{\alpha ^2 \lambda^2}{(\alpha-1)^2} \frac{\alpha -2}{\alpha \lambda ^2}\\
+                        &=& \frac{\alpha(\alpha -2)}{(\alpha-1)^2}
+\end{eqnarray*}
+
+\begin{eqnarray*}
+  \frac{\mu_1 ^2}{\mu_2} - 1 &=& \frac{\alpha^2 - 2\alpha - \alpha ^2 + 2\alpha - 1}{ \alpha ^2 - 2\alpha + 1}\\
+  (\alpha - 1)^2 &=& \frac{\mu_2}{\mu_2- \mu_1 ^2}\\
+  \hat{\alpha} &=& 1 + \sqrt{\frac{\mu_2}{\mu_2- \mu_1 ^2}} \\
+              &=& 1 + \sqrt{1 + \frac{\mu_1 ^2}{\mu_2- \mu_1 ^2}} \\
+\end{eqnarray*}
+Ker mora biti parameter $\alpha$ pozitiven, je upo??tevan pozitivni koren.
+
+\begin{eqnarray*}
+  \mu_1 &=& \frac{\alpha \lambda}{\alpha -1}\\
+  \lambda &=& \frac{\mu_1 (\alpha -1)}{\alpha}\\
+  \hat{\lambda} &=& \frac{\mu_1 (\hat{\alpha} -1)}{\hat{\alpha}}\\
+\end{eqnarray*}
+
+4.\\
+Iz datoteke podatki.nasleja.txt prebrani podatki, urejeni po velikosti in na novo izbrani samo tisti podatki, ki imajo ve?? ali enako kot enega prebivalca.
+
+<<>>=
+data_naselja <- read.table('podatki.naselja.txt', sep='\t', header=TRUE)
+data_naselja[1:4,]
+
+#urejeni podatki po padajocem st. prebivalcev
+data_naselja<-data_naselja[order(data_naselja$stevilo.prebivalcev, decreasing=TRUE),]
+sum(data_naselja$stevilo.prebivalcev>=1)
+
+#novi podatki samo do 5973. nasleja, ki imajo st. prebivalcev vecje od 1
+new <- 1:sum(data_naselja$stevilo.prebivalcev>=1)
+data_naselja_new <- data_naselja[new,]
+data_naselja_new[1:4,]
+@
+
+Log log graf:
+<<fig=TRUE>>=
+st_preb <- data_naselja_new$stevilo.prebivalcev
+plot(log(new),y=log(st_preb))
+@
+
+Opaziti se da, da je na za"cetku log-log graf skoraj premica, kar je zna"cilno za Pareto porazdelitev. V zadnjem delu pa to"cke ne le"zijo ve"c na premici.
+
+Regresijska premica za prvih 750 naselij: 
+<<fig=TRUE>>=
+n1<-750
+x<-1:n1
+st_preb_750<-(st_preb[x])
+
+st_preb_reg <- lm(log(st_preb_750)~log(x))
+plot(log(new),y=log(st_preb))
+abline(st_preb_reg, col=2)
+@
+
+5.\\
+
+"ce uporabim "se naslednje ena"cbe za momente:
+$$\mu_1 = \bar{X} = \frac{1}{n} \sum_{i=1}^n x_i$$
+$$\mu_2 = \frac{1}{n} \sum_{i=1}^n x_i^2$$
+$$S^2 = \frac{1}{n-1} \sum_{i=1}^n(x_i - \bar{X})^2$$
+$$Var(X) = \mu_2 - \mu_1^2 = \frac{n-1}{n} S^2 $$
+Potem velja:
+$$\hat{\alpha} = 1 + \sqrt{1 - \frac{n}{n-1} \frac{\hat{X}}{S^2}}$$
+<<>>=
+l_mle <- min (st_preb_750)
+l_mle
+
+alpha_mle <- n1/sum(log(st_preb_750/l_mle))
+alpha_mle
+@
+
+Parametra po metodi najve"cjega verjetja za prvih 750 opazovanj sta:
+$$\alpha = 1,272517$$
+$$\lambda = 406$$
+
+6.\\
+V nalog 3. so izra"zeni parametri po metodi momentov. Za izra"cun teh parametrov pa je treba upo"stevti "se naslednje:
+$$\mu_1 = \bar{X} = \frac{1}{n} \sum_{i=1}^n x_i$$
+$$S^2 = \frac{1}{n-1} \sum_{i=1}^n(x_i - \bar{X})^2$$
+$$Var(X) = \mu_2 - \mu_1^2 = \frac{n-1}{n} S^2 $$
+Potem velja:
+$$\hat{\alpha} = 1 + \sqrt{1 - \frac{n}{n-1} \frac{\bar{X}}{S^2}}$$
+
+<<>>=
+X_bar <- mean(st_preb_750)
+S <- sd(st_preb_750)
+
+alpha_mm <- 1+ sqrt(1 + (n1/(n1-1))*(X_bar^2)/S^2)
+alpha_mm
+
+lambda_mm <- X_bar*(alpha_mm-1)/alpha_mm
+lambda_mm
+@
+
+7.\\
+Novi podatki z vzorcem 100 naselij. In na teh podatki izra??unana parametra po metodi najve??jega verjetja??
+<<>>=
+#7
+data_naselja_100 <- read.table('podatki.naselja.vzorec.txt', header = TRUE, sep = '\t')
+n2 <-100
+#data_naselja_vz
+st_preb_100 <- data_naselja_100$stevilo.prebivalcev
+
+l_mle_100 <- min (st_preb_100)
+l_mle_100
+
+alpha_mle_100 <- n2/sum(log(st_preb_100/l_mle_100))
+alpha_mle_100
+@
+$$\hat{\alpha} = 1,391795$$
+$$\hat{\lambda} = 406$$
+
+8.\\
+V to??ki 3. sem izra??unala Fisherjevo informacijo za parameter $\alpha$:
+  $$I(\alpha) = \frac{1}{\alpha ^2}$$
+Od tod sledi, da je standardna napaka za parameter $\alpha$:
+$$Var(\alpha) = \frac{1}{n I (\alpha)}$$
+$$Var(\alpha) = \frac{\alpha ^2}{n}$$
+$$sd(\alpha) = \sqrt(\frac{\alpha ^2}{n})$$
+
+<<>>=
+#8
+sd <- sqrt(alpha_mle_100^2/n2)
+sd
+@
+
+9.\\
+<<>>=
+#9
+z <- qnorm(0.95)
+z
+
+lb <-alpha_mle_100 - z*sqrt(sd) 
+up <-alpha_mle_100 + z*sqrt(sd)
+lb
+up
+alpha_mle
+@
+
+
+\end{document}
