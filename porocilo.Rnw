@@ -1,0 +1,146 @@
+\documentclass{article}
+\usepackage[slovene]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{{\bf 2. doma"ca naloga} \\[3mm]
+       Statistika 2 in Matemati"cna statistika}
+
+\author{Zala Jam"sek, 27122040}
+\SweaveOpts{concordance=TRUE}
+\maketitle
+\newpage
+
+\section{Naloga 1}
+1.\\
+Parameter je procent Amri"cano, ki preferirajo smrtno kazen. Naj bo $X_i$ Bernullijeva spremenljivka
+$$X_i \sim
+\begin{pmatrix}
+  0 & 1 \\
+  (1-p) & p
+\end{pmatrix}
+$$
+Torej je v tem primeru $X_i$ i-ti izmed 537 anketiranih Ameri"canov, kateremu se primerna kazen zdi smrt (1), ali pa dosmrtna je"ca(0). Naj bo $X = \sum_{i=1}^n X_i$ skupno "stevilo Ameri"canov, ki se jim ustrezna kazen zdi smrtna kazen. Ker je X vsota Binomski sku"cajnih spremenljivk in velja: $X \sim (n,p)$, $E(X) = np$, $D(X) = p(1-p)$. Parameter p, dele"z Amri"canov, ki preferirajo smrtno kazen, je torej:
+$$p = \frac{E(X)}{n}.$$
+Cenilka $\hat{p} = \frac{X}{n}$ je nepristranska cenilka za p, saj je $E(p)=E(\frac{X}{n})=\frac{E(X)}{n}$.\\
+Po Centralnem limitnem izreku sledi:
+$$\frac{X - E(X)}{\sqrt{D(X)}} \sim N(0,1)$$
+
+$E(X) = np$, $D(X) = np(1-p)$, torej :
+
+\begin{eqnarray*}
+  \frac{X - nE(X_i)}{\sqrt{n D(X_i)}} &\sim& N(0,1)\\
+  X &\sim& N(np, np(1-p))\\
+\end{eqnarray*}
+
+Porazdelitev za $\hat{p} = \frac{X}{n}$ je dobljena tako, da se upanj v zgornjem izrazu deli z $n$, disperzijo pa z $N^2$:
+
+\begin{eqnarray*}
+     \hat{p} &\sim& N(p, \frac{p(1-p))}{n})\\
+     \frac{\hat{p}- p }{\sqrt{\frac{p(1-p))}{n}}} &\sim& N(0,1)
+\end{eqnarray*}
+
+2.\\
+Iz zgornjega izraza sledi interval zaupanja, kjer je $\phi$, kvantil standardne normalne porazdelitve, $\alpha$ pa stopnja zna"cilnosti:
+
+\begin{eqnarray*}
+  P \left(-\phi(1-\frac{\alpha}{2}) \leq \frac{\hat{p}- p }{\sqrt{\frac{p(1-p))}{n}}} \leq \phi(1-\frac{\alpha}{2}) \right) &\approx& (1- \alpha)\\
+  P\left(\hat{p}-\phi(1-\frac{\alpha}{2})\sqrt{\frac{p(1-p))}{n}} \leq p \leq \hat{p}+\phi(1-\frac{\alpha}{2})\sqrt{\frac{p(1-p))}{n}} \right)  &\approx& (1- \alpha)\\  
+\end{eqnarray*}
+
+Ker disperzija ni znana, je $p$ zamenjan s $\hat{p}$:
+\begin{eqnarray*}
+  P\left(\hat{p}-\phi(1-\frac{\alpha}{2})\sqrt{\frac{\hat{p}(1-\hat{p}))}{n}} \leq p \leq \hat{p}+\phi(1-\frac{\alpha}{2})\sqrt{\frac{\hat{p}(1-\hat{p}))}{n}} \right)  &\approx& (1- \alpha)\\  
+\end{eqnarray*}
+
+<<>>=
+n<- 537
+smrt <- 0.52
+jeca <- 0.48
+alpha <- 0.05
+
+lb <- smrt - qnorm(1-alpha/2)*sqrt(smrt*(1-smrt)/n)
+ub <- smrt + qnorm(1-alpha/2)*sqrt(smrt*(1-smrt)/n)
+
+lb
+ub
+@
+
+Interval zaupanja je torej 
+$$\hat{p} \in [0.4777445, 0.5622555]$$
+
+3.\\
+Ker interval zaupanja zajema tudi vrednosti, ki so manj"se od $0,5$, ne moremo trditi, da ve"cina (ve"c kot $50 \%$) Ameri"canov podpira smrtno kazen.
+
+4.\\
+"Ce ostane odstotek Ameri"canov, ki so za smrtno kazen konstanten, torej $\hat{p} = 0.52$, potem bo velikost intervala zaupanja enaka $2\%$, pri stopnji zna"cilnosti $\alpha = 2 \%$:
+\begin{eqnarray*}
+  2 \phi(1-0,01) \sqrt{\frac{\hat{p} (1- \hat{p})}{n}} &=& 0.02 \\
+  \frac{\hat{p} (1- \hat{p})}{n} &=& (\frac{0.01}{\phi(0,99)})^2\\
+  n &=& \frac{\hat{p} (1- \hat{p})}{(\frac{0.01}{\phi(0,99)})^2}
+\end{eqnarray*}
+
+<<>>=
+n <- smrt*(1-smrt)/(0.01/qnorm(0.99))^2
+n
+@
+Anketirato bi moral $13509$ ljudi.\\
+
+\section{Naloga 2}
+1.\\
+Verjetnosti, da je avto kripa in da je OK enaki,sta enaki. Pri"cakovana izguba v primeru, da avto kupimo je:
+$$E(Loss(kupi)) = \frac{1}{2} \cdot 12 + 0 = 6$$
+Pri"cakovana izguva, "ce avta ne kupimo, pa je:
+$$E(Loss(\textrm{ne kupi})) = \frac{1}{2} \cdot 4 + \frac{1}{2} \cdot 4 = 4$$
+
+Optimalna odlo"citev je, da avta ne kupimo, pri"cakovana izguba pa je v tem primeru 4.
+
+2.\\
+"Ce je servisna knji"zica popolna, potem je $y = y1$. V tem primeru je posteriorna verjetnost:
+
+$$P(\theta_i | y=y_1) \propto P(\theta_i) P(y = y_1 | \theta_i)$$
+Torej:
+
+\begin{eqnarray*}
+  P(\theta = \theta_1 | y = y_1) &\propto& \frac{1}{2} \cdot 0,2 = 0,1\\
+  P(\theta = \theta_2 | y = y_1) &\propto& \frac{1}{2} \cdot 0,8 = 0,4\\
+ \end{eqnarray*}
+ 
+Pri"cakovana izguba je torej:
+$$E(Loss(kupi)) = 12 \cdot 0,1 + 0 = 1,2$$
+$$E(Loss(\textrm{ne kupi})) = 4 \cdot 0,1 + 4 \cdot 0,4 = 2 $$
+
+Z znano informacijo, da je prometna knji"zica OK, se odlo"cimo za nakup avtomobila in v tem primeru je pri"cakovana izguba $1,2$.\\
+
+3.\\
+Posteriorne verjetnosti in pri"cakovane izgube za preostali stanji knji"zice:
+\begin{eqnarray*}
+  P(\theta = \theta_1 | y = y_2) &\propto& \frac{1}{2} \cdot 0,6 = 0,3\\
+  P(\theta = \theta_2 | y = y_2) &\propto& \frac{1}{2} \cdot 0,1 = 0,05\\
+\end{eqnarray*}
+Pri"cakovana izguba v primeru, da je knji"zica s pomankljivostmi:
+$$E(Loss(kupi)) = 12 \cdot 0,3 + 0 = 3,6$$
+$$E(Loss(\textrm{ne kupi})) = 4 \cdot 0,3 + 4 \cdot 0,05 = 1,4$$
+ 
+\begin{eqnarray*}
+  P(\theta = \theta_1 | y = y_3) &\propto& \frac{1}{2} \cdot 0,2 = 0,1\\
+  P(\theta = \theta_2 | y = y_3) &\propto& \frac{1}{2} \cdot 0,1 = 0,05\\
+\end{eqnarray*}
+Pri"cakovana izguba v primeru, da je knji"zica s pomankljivostmi:
+$$E(Loss(kupi)) = 12 \cdot 0,1 + 0 = 1,2$$
+$$E(Loss(\textrm{ne kupi})) = 4 \cdot 0,1 + 4 \cdot 0,05 = 0,6$$
+Torej se v obeh preostalih primerih odlo"cimo za ne nakup avtomobila, saj je pri"cakovana izguba v tem primeru manj"sa.\\[2mm]
+Informacija o stanju prometne knji"zice vpliva na optimalno odlo"citev kupca. V primeru da te informacije nima, je optimalna odlo"citev sprejeta zgolj na podlagi apriorne porazdelitve. Z opazovanjem stanja knji"zice pa na pri"cakovano izgubo vpliva posteriorna porazdelitev. Zato je v primeru, ko je knji"zica popolna, optimalna odlo"citev nakup avtomobila, saj je pri"cakovana izguba ni"zja. V nasprotnem primeru pa se kupec za nakup avtomobila ne odlo"ci, enako kot v primeru s samo apriorno porazdelitvijo.
+
+
+
+
+
+
+
+
+
+\end{document}
